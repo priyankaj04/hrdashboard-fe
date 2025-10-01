@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-700;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-gray-950 text-gray-100 font-sans antialiased;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-900;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-700 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-600;
+  }
+}
+
+@layer components {
+  /* New Relic inspired card styles */
+  .nr-card {
+    @apply bg-gray-900 border border-gray-800 rounded-lg shadow-dark;
+  }
+  
+  .nr-card-header {
+    @apply border-b border-gray-800 px-6 py-4;
+  }
+  
+  .nr-card-body {
+    @apply p-6;
+  }
+  
+  /* Button styles */
+  .nr-btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-newrelic hover:shadow-newrelic-lg;
+  }
+  
+  .nr-btn-secondary {
+    @apply bg-gray-800 hover:bg-gray-700 text-gray-100 font-medium px-4 py-2 rounded-lg transition-all duration-200 border border-gray-700;
+  }
+  
+  .nr-btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200;
+  }
+  
+  /* Form elements */
+  .nr-input {
+    @apply bg-gray-900 border border-gray-700 text-gray-100 placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+  
+  .nr-select {
+    @apply bg-gray-900 border border-gray-700 text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+  
+  /* Badge styles */
+  .nr-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .nr-badge-success {
+    @apply bg-primary-900 text-primary-300 border border-primary-800;
+  }
+  
+  .nr-badge-warning {
+    @apply bg-orange-900 text-orange-300 border border-orange-800;
+  }
+  
+  .nr-badge-danger {
+    @apply bg-red-900 text-red-300 border border-red-800;
+  }
+  
+  .nr-badge-info {
+    @apply bg-blue-900 text-blue-300 border border-blue-800;
+  }
+  
+  /* Table styles */
+  .nr-table {
+    @apply w-full divide-y divide-gray-800;
+  }
+  
+  .nr-table th {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider bg-gray-900;
+  }
+  
+  .nr-table td {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-100;
+  }
+  
+  .nr-table tr:hover {
+    @apply bg-gray-800 transition-colors duration-150;
+  }
+  
+  /* Metric card styles */
+  .nr-metric {
+    @apply nr-card p-6 hover:shadow-dark-lg transition-all duration-200;
+  }
+  
+  .nr-metric-value {
+    @apply text-3xl font-bold text-gray-100;
+  }
+  
+  .nr-metric-label {
+    @apply text-sm text-gray-400 mt-1;
+  }
+  
+  .nr-metric-change {
+    @apply text-sm font-medium mt-2 flex items-center;
+  }
+  
+  .nr-metric-change.positive {
+    @apply text-primary-400;
+  }
+  
+  .nr-metric-change.negative {
+    @apply text-red-400;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent;
+  }
+  
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
