@@ -143,24 +143,11 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 border-t border-gray-800 pt-6">
-            <h3 className="text-sm font-medium text-gray-300 mb-3">Demo Credentials:</h3>
-            <div className="space-y-2">
-              {demoCredentials.map((cred, index) => (
-                <div key={index} className="bg-gray-800 border border-gray-700 p-3 rounded-lg text-xs">
-                  <div className="font-semibold text-gray-100">{cred.role}</div>
-                  <div className="text-gray-400">Email: {cred.email}</div>
-                  <div className="text-gray-400">Password: {cred.password}</div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-500">
-          <p>© 2024 HR Dashboard. All rights reserved.</p>
+          <p>© 2025 HR Dashboard. All rights reserved.</p>
         </div>
       </div>
     </div>
