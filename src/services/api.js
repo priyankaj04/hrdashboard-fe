@@ -338,7 +338,7 @@ const apiService = {
           end_date: leaveData.end_date,
           reason: leaveData.reason,
           emergency_contact: leaveData.emergency_contact,
-          handover_notes: leaveData.handover_notes
+          contact_info: leaveData.contact_info
         },
       }),
 
@@ -353,7 +353,7 @@ const apiService = {
           end_date: updateData.end_date,
           reason: updateData.reason,
           emergency_contact: updateData.emergency_contact,
-          handover_notes: updateData.handover_notes
+          contact_info: updateData.contact_info
         },
       }),
 

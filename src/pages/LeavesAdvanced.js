@@ -38,7 +38,7 @@ const LeavesAdvanced = () => {
   const [statistics, setStatistics] = useState({});
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [leaveBalance, setLeaveBalance] = useState(null);
-  const [employees, setEmployees] = useState(mockEmployees);
+  const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   
   // Filter State
@@ -74,7 +74,7 @@ const LeavesAdvanced = () => {
     end_date: '',
     reason: '',
     emergency_contact: '',
-    handover_notes: ''
+    contact_info: ''
   });
   
   // Approval State
@@ -103,6 +103,7 @@ const LeavesAdvanced = () => {
         loadLeaveTypes(),
         loadStatistics(),
         loadLeaveBalance(),
+        loadEmployees(),
         loadDepartments()
       ]);
     } catch (error) {
@@ -159,7 +160,13 @@ const LeavesAdvanced = () => {
       const year = new Date().getFullYear();
       const response = await apiService.leaves.getStatistics({ year });
       if (response.success) {
-        setStatistics(response.data);
+        let data = {
+        total_requests: response.data?.summary?.total_requests,
+        pending_count: response.data?.summary?.pending_requests,
+        approved_count: response.data?.summary?.approved_requests,
+        rejected_count: response.data?.summary?.rejected_requests,
+      }
+        setStatistics(data);
       }
     } catch (error) {
       console.error('Failed to load statistics:', error);
@@ -169,12 +176,6 @@ const LeavesAdvanced = () => {
         pending_count: 5,
         approved_count: 18,
         rejected_count: 2,
-        total_days_used: 87,
-        by_type: {
-          vacation: { count: 10, days: 45 },
-          sick: { count: 8, days: 24 },
-          personal: { count: 7, days: 18 }
-        }
       });
     }
   };
@@ -190,7 +191,8 @@ const LeavesAdvanced = () => {
     } catch (error) {
       console.error('Failed to load leave balance:', error);
       // Mock balance
-      setLeaveBalance({
+       setLeaveBalance({});
+     /*  setLeaveBalance({
         employee_id: user.id,
         leave_types: {
           vacation: { allocated: 25, used: 15, pending: 3, remaining: 7 },
@@ -198,19 +200,37 @@ const LeavesAdvanced = () => {
           personal: { allocated: 5, used: 2, pending: 1, remaining: 2 }
         },
         total_days: { allocated: 42, used: 21, pending: 4, remaining: 17 }
-      });
+      }); */
+    }
+  };
+
+  const loadEmployees = async () => {
+    try {
+      const response = await apiService.employees.getAll();
+      if (response.success) {
+        setEmployees(response.data);
+
+        console.log("response.data", response.data)
+        
+        // Extract unique departments from employees
+        const uniqueDepartments = [...new Set(response.data.map(emp => emp.department))];
+        const departmentObjects = uniqueDepartments.map(dept => ({
+          id: dept?.id?.toLowerCase().replace(/\s+/g, '-'),
+          name: dept?.name
+        }));
+        setDepartments(departmentObjects);
+      }
+    } catch (error) {
+      console.error('Failed to load employees:', error);
+      // Fallback to mock data
+      setEmployees([]);
+      setDepartments([]);
     }
   };
 
   const loadDepartments = async () => {
-    // Mock departments - in real app, this would come from API
-    setDepartments([
-      { id: 'hr', name: 'Human Resources' },
-      { id: 'engineering', name: 'Engineering' },
-      { id: 'marketing', name: 'Marketing' },
-      { id: 'sales', name: 'Sales' },
-      { id: 'finance', name: 'Finance' }
-    ]);
+    // Departments are now loaded with employees in loadEmployees function
+    // This function is kept for compatibility but departments are set in loadEmployees
   };
 
   const handleCreateLeave = async (e) => {
@@ -226,7 +246,7 @@ const LeavesAdvanced = () => {
           end_date: '',
           reason: '',
           emergency_contact: '',
-          handover_notes: ''
+          contact_info: ''
         });
         loadAllData();
         alert('Leave request created successfully!');
@@ -378,7 +398,7 @@ const LeavesAdvanced = () => {
                 const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
                 const isToday = day.toDateString() === new Date().toDateString();
                 const dayLeaves = getLeavesForDate(day);
-                
+
                 return (
                   <div
                     key={index}
@@ -397,14 +417,15 @@ const LeavesAdvanced = () => {
                     <div className="space-y-1">
                       {dayLeaves.slice(0, 3).map((leave, idx) => {
                         const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                        const leaveType = leaveTypes.find(lt => lt.id === leave.type);
                         return (
                           <div
                             key={idx}
                             className="text-xs p-1 rounded text-white truncate"
-                            style={{ backgroundColor: getLeaveTypeColor(leave.type) }}
-                            title={`${employee?.name} - ${leave.type} leave`}
+                            style={{ backgroundColor: leaveType?.color || '#6B7280' }}
+                            title={`${employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name || 'Unknown'} - ${leaveType?.name || leave.type} leave`}
                           >
-                            {employee?.name?.split(' ')[0]} - {leave.type}
+                            {employee?.first_name || employee?.name?.split(' ')[0] || 'Unknown'} - {leaveType?.name || leave.type}
                           </div>
                         );
                       })}
@@ -482,8 +503,9 @@ const LeavesAdvanced = () => {
                   className="nr-select block w-full"
                 >
                   <option value="">All Employees</option>
+                  {console.log("employees", employees)}
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                    <option key={emp.id} value={emp.id}>{emp.first_name}{console.log("emp", emp)} {emp.last_name} - {emp.department}</option>
                   ))}
                 </select>
               </div>
@@ -539,9 +561,6 @@ const LeavesAdvanced = () => {
         <div className="nr-card-body">
           <div className="space-y-4">
             {leaves.map((leave) => {
-              const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
-              const leaveType = leaveTypes.find(lt => lt.id === leave.type);
-              
               return (
                 <div key={leave.id} className="border border-gray-700 rounded-lg p-4 bg-gray-800 hover:bg-gray-750 transition-colors">
                   <div className="flex items-start justify-between">
@@ -563,24 +582,45 @@ const LeavesAdvanced = () => {
                       
                       <div className="h-10 w-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
                         <span className="text-white font-medium text-sm">
-                          {employee?.name?.charAt(0) || 'U'}
+                          {(() => {
+                            const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                            const name = employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name || 'Unknown';
+                            return name.charAt(0);
+                          })()}
                         </span>
                       </div>
                     
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h4 className="font-semibold text-gray-100">{employee?.name || 'Unknown Employee'}</h4>
+                          <h4 className="font-semibold text-gray-100">
+                            {(() => {
+                              const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                              return employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name || 'Unknown Employee';
+                            })()}
+                          </h4>
                           <span className="text-sm text-gray-500">•</span>
-                          <span className="text-sm text-gray-400">{employee?.department}</span>
+                          <span className="text-sm text-gray-400">
+                            {(() => {
+                              const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                              return employee?.position;
+                            })()}
+                          </span>
+                          <span className="text-sm text-gray-500">•</span>
+                          <span className="text-sm text-gray-400">
+                            {(() => {
+                              const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                              return employee?.department;
+                            })()}
+                          </span>
                         </div>
                         
                         <div className="flex items-center space-x-4 text-sm text-gray-400 mb-2">
                           <div className="flex items-center space-x-1">
                             <div 
                               className="h-3 w-3 rounded"
-                              style={{ backgroundColor: leaveType?.color || '#6B7280' }}
+                              style={{ backgroundColor: leave?.leave_type?.color || '#6B7280' }}
                             />
-                            <span className="capitalize">{leaveType?.name || leave.type}</span>
+                            <span className="capitalize">{leave?.leave_type?.name}</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-4 w-4" />
@@ -691,120 +731,151 @@ const LeavesAdvanced = () => {
     
     return (
       <div className="space-y-6">
+        {/* Header with Stats */}
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-100">Pending Approvals</h2>
-          <span className="nr-badge nr-badge-warning">
-            {pendingLeaves.length} pending
-          </span>
-        </div>
-
-        <div className="nr-card">
-          <div className="nr-card-body">
-            {pendingLeaves.length === 0 ? (
-              <div className="text-center py-8">
-                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-400">No pending leave requests</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingLeaves.map((leave) => {
-                  const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
-                  const leaveType = leaveTypes.find(lt => lt.id === leave.type);
-                  
-                  return (
-                    <div key={leave.id} className="border border-orange-500 rounded-lg p-4 bg-orange-900 bg-opacity-20">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                          <div className="h-10 w-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-medium text-sm">
-                              {employee?.name?.charAt(0) || 'U'}
-                            </span>
-                          </div>
-                        
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h4 className="font-semibold text-gray-100">{employee?.name}</h4>
-                              <span className="text-sm text-gray-500">•</span>
-                              <span className="text-sm text-gray-400">{employee?.department}</span>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-3">
-                              <div>
-                                <span className="text-gray-400">Type:</span>
-                                <div className="flex items-center space-x-1 mt-1">
-                                  <div 
-                                    className="h-3 w-3 rounded"
-                                    style={{ backgroundColor: leaveType?.color || '#6B7280' }}
-                                  />
-                                  <span className="text-gray-200">{leaveType?.name}</span>
-                                </div>
-                              </div>
-                              <div>
-                                <span className="text-gray-400">Duration:</span>
-                                <p className="text-gray-200 mt-1">
-                                  {new Date(leave.start_date || leave.startDate).toLocaleDateString()} - 
-                                  {new Date(leave.end_date || leave.endDate).toLocaleDateString()}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                  {leave.total_days || leave.days} day{(leave.total_days || leave.days) > 1 ? 's' : ''}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-gray-400">Applied:</span>
-                                <p className="text-gray-200 mt-1">
-                                  {new Date(leave.applied_date || leave.appliedDate).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <div className="mb-3">
-                              <span className="text-gray-400 text-sm">Reason:</span>
-                              <p className="text-gray-200 mt-1">{leave.reason}</p>
-                            </div>
-
-                            {leave.emergency_contact && (
-                              <div className="mb-3">
-                                <span className="text-gray-400 text-sm">Emergency Contact:</span>
-                                <p className="text-gray-200 mt-1">{leave.emergency_contact}</p>
-                              </div>
-                            )}
-
-                            {leave.handover_notes && (
-                              <div>
-                                <span className="text-gray-400 text-sm">Handover Notes:</span>
-                                <p className="text-gray-200 mt-1">{leave.handover_notes}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleApprovalAction(leave.id, 'approved')}
-                            className="nr-btn-success text-sm inline-flex items-center"
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedLeave(leave);
-                              setApprovalForm({ status: 'rejected', comments: '' });
-                              setShowApprovalModal(true);
-                            }}
-                            className="nr-btn-danger text-sm inline-flex items-center"
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-100">Pending Approvals</h2>
+            <p className="text-sm text-gray-400 mt-1">Review and approve leave requests</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-orange-300 font-medium">{pendingLeaves.length} pending requests</span>
+            {pendingLeaves.length > 0 && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleBulkAction('approve')}
+                  className="nr-btn-success text-sm"
+                >
+                  Approve All
+                </button>
+                <button
+                  onClick={() => handleBulkAction('reject')}
+                  className="nr-btn-danger text-sm"
+                >
+                  Reject All
+                </button>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Pending Requests */}
+        <div className="space-y-4">
+          {pendingLeaves.length === 0 ? (
+            <div className="nr-card">
+              <div className="nr-card-body text-center py-12">
+                <Check className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-200 mb-2">All Caught Up!</h3>
+                <p className="text-gray-400">No pending leave requests require your attention</p>
+              </div>
+            </div>
+          ) : (
+            pendingLeaves.map((leave) => {
+              
+              return (
+                <div key={leave.id} className="nr-card">
+                  <div className="nr-card-body">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="h-10 w-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
+                          <span className="text-white font-medium text-sm">
+                            {(() => {
+                              const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                              const name = employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name || 'Unknown';
+                              return name.charAt(0);
+                            })()}
+                          </span>
+                        </div>
+                      
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h4 className="font-semibold text-gray-100">
+                              {(() => {
+                                const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                                return employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name || 'Unknown Employee';
+                              })()}
+                            </h4>
+                            <span className="text-sm text-gray-500">•</span>
+                            <span className="text-sm text-gray-400">
+                              {(() => {
+                                const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                                return employee?.position;
+                              })()}
+                            </span>
+                            <span className="text-sm text-gray-500">•</span>
+                            <span className="text-sm text-gray-400">
+                              {(() => {
+                                const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
+                                return employee?.department;
+                              })()}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-4 text-sm text-gray-400 mb-2">
+                            <div className="flex items-center space-x-1">
+                              <div 
+                                className="h-3 w-3 rounded"
+                                style={{ backgroundColor: leave?.leave_type?.color || '#6B7280' }}
+                              />
+                              <span>{leave?.leave_type?.name}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-4 w-4" />
+                              <span>
+                                {new Date(leave.start_date || leave.startDate).toLocaleDateString()} - 
+                                {new Date(leave.end_date || leave.endDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Clock className="h-4 w-4" />
+                              <span>{leave.total_days || leave.days} days</span>
+                            </div>
+                          </div>
+                          
+                          <p className="text-sm text-gray-300 mb-2">{leave.reason}</p>
+                          <p className="text-xs text-gray-500">
+                            Applied on {new Date(leave.applied_date || leave.appliedDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => {
+                            setSelectedLeave(leave);
+                            setShowDetailsModal(true);
+                          }}
+                          className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        
+                        <button
+                          onClick={() => handleApprovalAction(leave.id, 'approved')}
+                          className="p-2 text-green-400 hover:text-green-300 hover:bg-green-900 rounded-lg transition-colors"
+                          title="Approve"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setSelectedLeave(leave);
+                            setApprovalForm({ status: 'rejected', comments: '' });
+                            setShowApprovalModal(true);
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900 rounded-lg transition-colors"
+                          title="Reject"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     );
@@ -813,108 +884,150 @@ const LeavesAdvanced = () => {
   // Render Statistics Dashboard
   const renderStatsDashboard = () => (
     <div className="space-y-6">
-      {/* Key Metrics */}
+      {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="nr-metric">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="nr-metric-label">Total Requests</p>
-              <p className="nr-metric-value text-blue-400">{statistics.total_requests || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">This year</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-              <FileText className="h-6 w-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="nr-metric">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="nr-metric-label">Pending Requests</p>
-              <p className="nr-metric-value text-orange-400">{statistics.pending_count || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">Awaiting approval</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg">
-              <Clock className="h-6 w-6 text-white" />
+        <div className="nr-card bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-500/30">
+          <div className="nr-card-body">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-400 text-sm font-medium">Total Requests</p>
+                <p className="text-3xl font-bold text-white mt-1">{statistics.total_requests || 0}</p>
+                <p className="text-xs text-blue-300 mt-2 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  This year
+                </p>
+              </div>
+              <div className="p-3 bg-blue-500 rounded-full">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="nr-metric">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="nr-metric-label">Days Used</p>
-              <p className="nr-metric-value text-primary-400">{statistics.total_days_used || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">Total this year</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-white" />
+        <div className="nr-card bg-gradient-to-br from-orange-500/20 to-orange-600/20 border-orange-500/30">
+          <div className="nr-card-body">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-400 text-sm font-medium">Pending Approval</p>
+                <p className="text-3xl font-bold text-white mt-1">{statistics.pending_count || 0}</p>
+                <p className="text-xs text-orange-300 mt-2 flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Needs attention
+                </p>
+              </div>
+              <div className="p-3 bg-orange-500 rounded-full">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="nr-metric">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="nr-metric-label">Days Remaining</p>
-              <p className="nr-metric-value text-green-400">{calculateRemainingDaysThisYear()}</p>
-              <p className="text-xs text-gray-500 mt-1">Until year end</p>
+        <div className="nr-card bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30">
+          <div className="nr-card-body">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-400 text-sm font-medium">Approved</p>
+                <p className="text-3xl font-bold text-white mt-1">{statistics.approved_count || 0}</p>
+                <p className="text-xs text-green-300 mt-2 flex items-center">
+                  <Check className="h-3 w-3 mr-1" />
+                  This period
+                </p>
+              </div>
+              <div className="p-3 bg-green-500 rounded-full">
+                <Check className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-              <Calendar className="h-6 w-6 text-white" />
+          </div>
+        </div>
+
+        <div className="nr-card bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-500/30">
+          <div className="nr-card-body">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-red-400 text-sm font-medium">Rejected</p>
+                <p className="text-3xl font-bold text-white mt-1">{statistics.rejected_count || 0}</p>
+                <p className="text-xs text-red-300 mt-2 flex items-center">
+                  <X className="h-3 w-3 mr-1" />
+                  This period
+                </p>
+              </div>
+              <div className="p-3 bg-red-500 rounded-full">
+                <X className="h-6 w-6 text-white" />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Leave Balance - Only for employees or when viewing specific employee */}
-      {leaveBalance && (
+      {/* Leave Balance Section */}
+      {leaveBalance && Object.keys(leaveBalance.leave_types || {}).length > 0 && (
         <div className="nr-card">
           <div className="nr-card-header">
-            <h3 className="text-lg font-semibold text-gray-100">Your Leave Balance</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-100">Your Leave Balance</h3>
+                <p className="text-sm text-gray-400 mt-1">Track your remaining leave days</p>
+              </div>
+              <User className="h-6 w-6 text-gray-400" />
+            </div>
           </div>
           <div className="nr-card-body">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Object.entries(leaveBalance.leave_types || {}).map(([typeId, balance]) => {
                 const leaveType = leaveTypes.find(lt => lt.id === typeId);
+                const usagePercentage = (balance.used / balance.allocated) * 100;
+                
                 return (
-                  <div key={typeId} className="bg-gray-800 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-200">{leaveType?.name || typeId}</h4>
-                      <div 
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: getLeaveTypeColor(typeId) }}
-                      />
+                  <div key={typeId} className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-all duration-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="h-4 w-4 rounded-full"
+                          style={{ backgroundColor: getLeaveTypeColor(typeId) }}
+                        />
+                        <h4 className="font-semibold text-gray-100">{leaveType?.name || typeId}</h4>
+                      </div>
+                      <span className="text-2xl font-bold text-gray-200">{balance.remaining}</span>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Allocated:</span>
-                        <span className="text-gray-200">{balance.allocated}</span>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Available</span>
+                        <span className="font-medium text-green-400">{balance.remaining} days</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Used:</span>
-                        <span className="text-red-400">{balance.used}</span>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-400">Used</span>
+                        <span className="font-medium text-red-400">{balance.used} of {balance.allocated}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Pending:</span>
-                        <span className="text-orange-400">{balance.pending}</span>
-                      </div>
-                      <div className="flex justify-between text-sm font-medium">
-                        <span className="text-gray-300">Remaining:</span>
-                        <span className="text-green-400">{balance.remaining}</span>
-                      </div>
+                      {balance.pending > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-400">Pending</span>
+                          <span className="font-medium text-orange-400">{balance.pending} days</span>
+                        </div>
+                      )}
                       
-                      {/* Progress bar */}
-                      <div className="mt-3">
-                        <div className="bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="h-2 rounded-full"
-                            style={{ 
-                              width: `${(balance.used / balance.allocated) * 100}%`,
-                              backgroundColor: getLeaveTypeColor(typeId)
-                            }}
-                          />
+                      {/* Progress Bar */}
+                      <div className="mt-4">
+                        <div className="bg-gray-700 rounded-full h-2 overflow-hidden">
+                          <div className="flex h-full">
+                            <div 
+                              className="h-full transition-all duration-300"
+                              style={{ 
+                                width: `${usagePercentage}%`,
+                                backgroundColor: getLeaveTypeColor(typeId)
+                              }}
+                            />
+                            {balance.pending > 0 && (
+                              <div 
+                                className="h-full bg-orange-400 opacity-60"
+                                style={{ width: `${(balance.pending / balance.allocated) * 100}%` }}
+                              />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex justify-between mt-2 text-xs text-gray-500">
+                          <span>0</span>
+                          <span>{balance.allocated} days</span>
                         </div>
                       </div>
                     </div>
@@ -926,38 +1039,156 @@ const LeavesAdvanced = () => {
         </div>
       )}
 
-      {/* Leave Types Breakdown */}
-      <div className="nr-card">
-        <div className="nr-card-header">
-          <h3 className="text-lg font-semibold text-gray-100">Leave Types Overview</h3>
-        </div>
-        <div className="nr-card-body">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.entries(statistics.by_type || {}).map(([type, data]) => {
-              const leaveType = leaveTypes.find(lt => lt.id === type);
-              return (
-                <div key={type} className="bg-gray-800 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-200">{leaveType?.name || type}</h4>
-                    <BarChart3 className="h-5 w-5 text-gray-400" />
+      {/* Leave Types Configuration */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="nr-card">
+          <div className="nr-card-header">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-100">Leave Types</h3>
+                <p className="text-sm text-gray-400 mt-1">Available leave categories</p>
+              </div>
+              <Building className="h-6 w-6 text-gray-400" />
+            </div>
+          </div>
+          <div className="nr-card-body">
+            <div className="space-y-4">
+              {leaveTypes?.map((type) => (
+                <div key={type.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="h-4 w-4 rounded-full"
+                      style={{ backgroundColor: type.color || '#6B7280' }}
+                    />
+                    {console.log("type", type)}
+                    <div>
+                      <h4 className="font-medium text-gray-100">{type.name}</h4>
+                      <p className="text-sm text-gray-400">Max: {type.max_days} days</p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Requests:</span>
-                      <span className="text-gray-200">{data.count}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Total Days:</span>
-                      <span className="text-gray-200">{data.days}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Avg Days:</span>
-                      <span className="text-gray-200">{(data.days / data.count).toFixed(1)}</span>
-                    </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-300">{type.advance_notice_days || 0} days</p>
+                    <p className="text-xs text-gray-500">notice required</p>
                   </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="nr-card">
+          <div className="nr-card-header">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-100">Quick Actions</h3>
+                <p className="text-sm text-gray-400 mt-1">Common tasks and shortcuts</p>
+              </div>
+              <BarChart3 className="h-6 w-6 text-gray-400" />
+            </div>
+          </div>
+          <div className="nr-card-body">
+            <div className="space-y-3">
+              <button
+                onClick={() => setShowRequestModal(true)}
+                className="w-full flex items-center justify-between p-4 bg-primary-900 hover:bg-primary-800 rounded-lg border border-primary-700 transition-colors group"
+              >
+                <div className="flex items-center space-x-3">
+                  <Plus className="h-5 w-5 text-primary-400" />
+                  <span className="text-gray-100 font-medium">Request Leave</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-primary-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => setCurrentView('calendar')}
+                className="w-full flex items-center justify-between p-4 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition-colors group"
+              >
+                <div className="flex items-center space-x-3">
+                  <Calendar className="h-5 w-5 text-blue-400" />
+                  <span className="text-gray-100 font-medium">View Calendar</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => setCurrentView('requests')}
+                className="w-full flex items-center justify-between p-4 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition-colors group"
+              >
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-5 w-5 text-green-400" />
+                  <span className="text-gray-100 font-medium">My Requests</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {statistics.pending_count > 0 && (
+                    <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">
+                      {statistics.pending_count}
+                    </span>
+                  )}
+                  <ChevronRight className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
+
+              {canManageLeaves() && (
+                <button
+                  onClick={() => setCurrentView('approvals')}
+                  className="w-full flex items-center justify-between p-4 bg-orange-900 hover:bg-orange-800 rounded-lg border border-orange-700 transition-colors group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-5 w-5 text-orange-400" />
+                    <span className="text-gray-100 font-medium">Pending Approvals</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {statistics.pending_count > 0 && (
+                      <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full animate-pulse">
+                        {statistics.pending_count}
+                      </span>
+                    )}
+                    <ChevronRight className="h-5 w-5 text-orange-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Statistics */}
+      <div className="nr-card">
+        <div className="nr-card-header">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-100">Year Overview</h3>
+              <p className="text-sm text-gray-400 mt-1">Leave statistics for {new Date().getFullYear()}</p>
+            </div>
+            <Calendar className="h-6 w-6 text-gray-400" />
+          </div>
+        </div>
+        <div className="nr-card-body">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <TrendingUp className="h-8 w-8 text-white" />
+              </div>
+              <p className="text-2xl font-bold text-gray-100">{calculateRemainingDaysThisYear()}</p>
+              <p className="text-sm text-gray-400">Days remaining in year</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <p className="text-2xl font-bold text-gray-100">{employees?.length || 0}</p>
+              <p className="text-sm text-gray-400">Total employees</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <BarChart3 className="h-8 w-8 text-white" />
+              </div>
+              <p className="text-2xl font-bold text-gray-100">{leaveTypes?.length || 0}</p>
+              <p className="text-sm text-gray-400">Leave types available</p>
+            </div>
           </div>
         </div>
       </div>
@@ -1071,7 +1302,8 @@ const LeavesAdvanced = () => {
                       <option value="">Select employee</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.id}>
-                          {emp.name} - {emp.department}
+                          {console.log("emp", emp)}
+                          {emp.first_name} {emp.last_name} - {emp.department} ({emp.position})
                         </option>
                       ))}
                     </select>
@@ -1153,14 +1385,14 @@ const LeavesAdvanced = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Handover Notes
+                    Contact Info
                   </label>
                   <textarea
-                    value={leaveForm.handover_notes}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, handover_notes: e.target.value })}
+                    value={leaveForm.contact_info}
+                    onChange={(e) => setLeaveForm({ ...leaveForm, contact_info: e.target.value })}
                     rows={2}
                     className="nr-input block w-full"
-                    placeholder="Any handover instructions or notes for colleagues..."
+                    placeholder="Any form of contact information..."
                   />
                 </div>
 
@@ -1200,7 +1432,10 @@ const LeavesAdvanced = () => {
                   Are you sure you want to {approvalForm.status} this leave request?
                 </p>
                 <div className="mt-2 p-3 bg-gray-800 rounded-lg">
-                  <p className="text-sm text-gray-400">Employee: {employees.find(emp => emp.id === (selectedLeave.employee_id || selectedLeave.employeeId))?.name}</p>
+                  <p className="text-sm text-gray-400">Employee: {(() => {
+                    const employee = employees.find(emp => emp.id === (selectedLeave.employee_id || selectedLeave.employeeId));
+                    return employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name || 'Unknown';
+                  })()}</p>
                   <p className="text-sm text-gray-400">Duration: {new Date(selectedLeave.start_date || selectedLeave.startDate).toLocaleDateString()} - {new Date(selectedLeave.end_date || selectedLeave.endDate).toLocaleDateString()}</p>
                 </div>
               </div>
@@ -1263,7 +1498,7 @@ const LeavesAdvanced = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <span className="text-sm text-gray-400">Name:</span>
-                          <p className="text-gray-200">{employee?.name}</p>
+                          <p className="text-gray-200">{employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name}</p>
                         </div>
                         <div>
                           <span className="text-sm text-gray-400">Department:</span>
@@ -1330,7 +1565,7 @@ const LeavesAdvanced = () => {
                     </div>
 
                     {/* Additional Information */}
-                    {(selectedLeave.emergency_contact || selectedLeave.handover_notes) && (
+                    {(selectedLeave.emergency_contact || selectedLeave.contact_info) && (
                       <div className="bg-gray-800 rounded-lg p-4">
                         <h3 className="text-lg font-medium text-gray-100 mb-3">Additional Information</h3>
                         {selectedLeave.emergency_contact && (
@@ -1339,10 +1574,10 @@ const LeavesAdvanced = () => {
                             <p className="text-gray-200">{selectedLeave.emergency_contact}</p>
                           </div>
                         )}
-                        {selectedLeave.handover_notes && (
+                        {selectedLeave.contact_info && (
                           <div>
-                            <span className="text-sm text-gray-400">Handover Notes:</span>
-                            <p className="text-gray-200">{selectedLeave.handover_notes}</p>
+                            <span className="text-sm text-gray-400">Contact Info:</span>
+                            <p className="text-gray-200">{selectedLeave.contact_info}</p>
                           </div>
                         )}
                       </div>
