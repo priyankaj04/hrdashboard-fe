@@ -69,7 +69,7 @@ const LeavesAdvanced = () => {
   // Form State
   const [leaveForm, setLeaveForm] = useState({
     employee_id: '',
-    type: '',
+    leave_type_id: '',
     start_date: '',
     end_date: '',
     reason: '',
@@ -241,7 +241,7 @@ const LeavesAdvanced = () => {
         setShowRequestModal(false);
         setLeaveForm({
           employee_id: '',
-          type: '',
+          leave_type_id: '',
           start_date: '',
           end_date: '',
           reason: '',
@@ -422,10 +422,10 @@ const LeavesAdvanced = () => {
                           <div
                             key={idx}
                             className="text-xs p-1 rounded text-white truncate"
-                            style={{ backgroundColor: leaveType?.color || '#6B7280' }}
-                            title={`${employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name || 'Unknown'} - ${leaveType?.name || leave.type} leave`}
+                            style={{ backgroundColor: leave?.leave_type?.color || '#6B7280' }}
+                            title={`${employee?.first_name && employee?.last_name ? `${employee.first_name} ${employee.last_name}` : employee?.name || 'Unknown'} - ${leave?.leave_type?.name || leave.type} leave`}
                           >
-                            {employee?.first_name || employee?.name?.split(' ')[0] || 'Unknown'} - {leaveType?.name || leave.type}
+                            {employee?.first_name || employee?.name?.split(' ')[0] || 'Unknown'} - {leave?.leave_type?.name || leave.type}
                           </div>
                         );
                       })}
@@ -503,9 +503,8 @@ const LeavesAdvanced = () => {
                   className="nr-select block w-full"
                 >
                   <option value="">All Employees</option>
-                  {console.log("employees", employees)}
                   {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.first_name}{console.log("emp", emp)} {emp.last_name} - {emp.department}</option>
+                    <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name} - {emp.department?.name}</option>
                   ))}
                 </select>
               </div>
@@ -602,14 +601,14 @@ const LeavesAdvanced = () => {
                           <span className="text-sm text-gray-400">
                             {(() => {
                               const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
-                              return employee?.position;
+                              return employee?.position?.title;
                             })()}
                           </span>
                           <span className="text-sm text-gray-500">•</span>
                           <span className="text-sm text-gray-400">
                             {(() => {
                               const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
-                              return employee?.department;
+                              return employee?.department?.name;
                             })()}
                           </span>
                         </div>
@@ -798,14 +797,14 @@ const LeavesAdvanced = () => {
                             <span className="text-sm text-gray-400">
                               {(() => {
                                 const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
-                                return employee?.position;
+                                return employee?.position?.title;
                               })()}
                             </span>
                             <span className="text-sm text-gray-500">•</span>
                             <span className="text-sm text-gray-400">
                               {(() => {
                                 const employee = employees.find(emp => emp.id === (leave.employee_id || leave.employeeId));
-                                return employee?.department;
+                                return employee?.department?.name;
                               })()}
                             </span>
                           </div>
@@ -1302,8 +1301,7 @@ const LeavesAdvanced = () => {
                       <option value="">Select employee</option>
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.id}>
-                          {console.log("emp", emp)}
-                          {emp.first_name} {emp.last_name} - {emp.department} ({emp.position})
+                          {emp.first_name} {emp.last_name} - {emp.department?.name} ({emp.position?.title})
                         </option>
                       ))}
                     </select>
@@ -1315,8 +1313,8 @@ const LeavesAdvanced = () => {
                     Leave Type *
                   </label>
                   <select
-                    value={leaveForm.type}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
+                    value={leaveForm.leave_type_id}
+                    onChange={(e) => setLeaveForm({ ...leaveForm, leave_type_id: e.target.value })}
                     className="nr-select block w-full"
                     required
                   >

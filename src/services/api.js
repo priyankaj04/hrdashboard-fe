@@ -333,7 +333,7 @@ const apiService = {
         method: 'POST',
         body: {
           employee_id: leaveData.employee_id,
-          type: leaveData.type,
+          leave_type_id: leaveData.leave_type_id,
           start_date: leaveData.start_date,
           end_date: leaveData.end_date,
           reason: leaveData.reason,
