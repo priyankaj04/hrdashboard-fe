@@ -305,6 +305,129 @@ const apiService = {
         method: 'DELETE',
       }),
   },
+
+  // Leave Management APIs
+  leaves: {
+    // Get leave requests with filtering and pagination
+    // GET /api/leaves
+    getAll: (filters = {}) => {
+      const params = new URLSearchParams();
+      
+      // Add filters to query params
+      if (filters.employee_id) params.append('employee_id', filters.employee_id);
+      if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+      if (filters.type) params.append('type', filters.type);
+      if (filters.start_date) params.append('start_date', filters.start_date);
+      if (filters.end_date) params.append('end_date', filters.end_date);
+      if (filters.page) params.append('page', filters.page);
+      if (filters.limit) params.append('limit', filters.limit);
+
+      const queryString = params.toString();
+      return apiRequest(`/api/leaves${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Create new leave request
+    // POST /api/leaves
+    create: (leaveData) => 
+      apiRequest('/api/leaves', {
+        method: 'POST',
+        body: {
+          employee_id: leaveData.employee_id,
+          type: leaveData.type,
+          start_date: leaveData.start_date,
+          end_date: leaveData.end_date,
+          reason: leaveData.reason,
+          emergency_contact: leaveData.emergency_contact,
+          handover_notes: leaveData.handover_notes
+        },
+      }),
+
+    // Update leave request (only pending requests)
+    // PUT /api/leaves/:id
+    update: (id, updateData) => 
+      apiRequest(`/api/leaves/${id}`, {
+        method: 'PUT',
+        body: {
+          type: updateData.type,
+          start_date: updateData.start_date,
+          end_date: updateData.end_date,
+          reason: updateData.reason,
+          emergency_contact: updateData.emergency_contact,
+          handover_notes: updateData.handover_notes
+        },
+      }),
+
+    // Cancel/Delete leave request (only pending requests)
+    // DELETE /api/leaves/:id
+    cancel: (id) => 
+      apiRequest(`/api/leaves/${id}`, {
+        method: 'DELETE',
+      }),
+
+    // Approve or reject leave request (Admin/HR/Manager only)
+    // PUT /api/leaves/:id/status
+    updateStatus: (id, status, comments = '') => 
+      apiRequest(`/api/leaves/${id}/status`, {
+        method: 'PUT',
+        body: {
+          status, // 'approved' or 'rejected'
+          comments
+        },
+      }),
+
+    // Get leave statistics
+    // GET /api/leaves/statistics
+    getStatistics: (filters = {}) => {
+      const params = new URLSearchParams();
+      
+      if (filters.employee_id) params.append('employee_id', filters.employee_id);
+      if (filters.department_id) params.append('department_id', filters.department_id);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+
+      const queryString = params.toString();
+      return apiRequest(`/api/leaves/statistics${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Get employee leave balance
+    // GET /api/leaves/balance/:employee_id
+    getBalance: (employeeId, year = null) => {
+      const params = new URLSearchParams();
+      if (year) params.append('year', year);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/leaves/balance/${employeeId}${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Get leave calendar view
+    // GET /api/leaves/calendar
+    getCalendar: (startDate, endDate, filters = {}) => {
+      const params = new URLSearchParams();
+      params.append('start_date', startDate);
+      params.append('end_date', endDate);
+      
+      if (filters.department_id) params.append('department_id', filters.department_id);
+      if (filters.employee_id) params.append('employee_id', filters.employee_id);
+
+      return apiRequest(`/api/leaves/calendar?${params.toString()}`);
+    },
+
+    // Get all available leave types
+    // GET /api/leaves/types
+    getTypes: () => apiRequest('/api/leaves/types'),
+
+    // Bulk approve/reject leave requests (Admin/HR/Manager only)
+    // POST /api/leaves/bulk-action
+    bulkAction: (action, leaveIds, comments = '') => 
+      apiRequest('/api/leaves/bulk-action', {
+        method: 'POST',
+        body: {
+          action, // 'approve' or 'reject'
+          leave_ids: leaveIds,
+          comments
+        },
+      }),
+  },
 };
 
 // Export utilities and service
