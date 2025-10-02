@@ -140,16 +140,26 @@ const Reports = () => {
   };
 
   // Get display values with fallbacks
-  const getMetrics = () => ({
-    totalEmployees: employeeOverview.total_employees || mockEmployees.length,
-    presentToday: employeeOverview.present_today || Math.floor(mockEmployees.length * 0.95),
-    absentToday: employeeOverview.absent_today || Math.floor(mockEmployees.length * 0.05),
-    totalDepartments: employeeOverview.total_departments || departmentStats.length,
-    totalHirings: hiringData.total_hirings || 0,
-    totalResignations: hiringData.total_resignations || 0,
-    totalSalarySpending: salaryData.total_spending || 0,
-    averageWorkingHours: workingHoursData.average_hours || 0
-  });
+  const getMetrics = () => {
+    // Calculate average working hours from department summary
+    const avgWorkingHours = workingHoursData?.department_summary?.length > 0
+      ? Math.round(
+          workingHoursData.department_summary.reduce((sum, dept) => sum + (dept.average_hours || 0), 0) / 
+          workingHoursData.department_summary.length
+        )
+      : 0;
+
+    return {
+      totalEmployees: employeeOverview.total_employees || departmentData?.total_employees || mockEmployees.length,
+      presentToday: employeeOverview.present_today || Math.floor(mockEmployees.length * 0.95),
+      absentToday: employeeOverview.absent_today || Math.floor(mockEmployees.length * 0.05),
+      totalDepartments: employeeOverview.total_departments || departmentData?.total_departments || departmentStats.length,
+      totalHirings: hiringData.total_hirings || 0,
+      totalResignations: hiringData.total_resignations || 0,
+      totalSalarySpending: salaryData.total_spending || 0,
+      averageWorkingHours: avgWorkingHours
+    };
+  };
 
   const metrics = getMetrics();
 
@@ -404,12 +414,17 @@ const Reports = () => {
         <div className="nr-card">
           <h3 className="text-lg font-semibold text-gray-100 mb-4">Working Hours by Department</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={workingHoursData.department_summary || []}>
+            <BarChart data={workingHoursData?.department_summary || []}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="department" tick={{ fill: '#9ca3af' }} />
               <YAxis tick={{ fill: '#9ca3af' }} />
               <Tooltip 
-                formatter={(value) => [`${value}h`, 'Average Hours']}
+                formatter={(value, name) => {
+                  if (name === 'average_hours') return [`${value}h`, 'Average Hours'];
+                  if (name === 'total_hours') return [`${value}h`, 'Total Hours'];
+                  if (name === 'total_overtime') return [`${value}h`, 'Overtime Hours'];
+                  return [value, name];
+                }}
                 contentStyle={{ 
                   backgroundColor: '#1f2937', 
                   border: '1px solid #374151', 
@@ -417,7 +432,8 @@ const Reports = () => {
                   borderRadius: '8px'
                 }}
               />
-              <Bar dataKey="average_hours" fill="#3b82f6" />
+              <Bar dataKey="average_hours" fill="#3b82f6" name="Average Hours" />
+              <Bar dataKey="total_overtime" fill="#f59e0b" name="Overtime Hours" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -428,20 +444,23 @@ const Reports = () => {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={departmentData.length > 0 ? departmentData : departmentStats}
+                data={departmentData?.departments?.length > 0 ? departmentData.departments : departmentStats}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value }) => `${name}: ${value}`}
+                label={({ department_name, name, total_employees, count }) => `${department_name || name}: ${total_employees || count}`}
                 outerRadius={80}
                 fill="#8884d8"
-                dataKey="total"
+                dataKey="total_employees"
+                nameKey="department_name"
               >
-                {(departmentData.length > 0 ? departmentData : departmentStats).map((entry, index) => (
+                {(departmentData?.departments?.length > 0 ? departmentData.departments : departmentStats).map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color || departmentStats[index]?.color || '#8884d8'} />
                 ))}
               </Pie>
               <Tooltip 
+                formatter={(value, name) => [value, 'Employees']}
+                labelFormatter={(label) => `Department: ${label}`}
                 contentStyle={{ 
                   backgroundColor: '#1f2937', 
                   border: '1px solid #374151', 
@@ -473,9 +492,9 @@ const Reports = () => {
                 className="appearance-none bg-gray-800 border border-gray-600 text-gray-100 px-3 py-1 pr-8 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Departments</option>
-                {(departmentData.length > 0 ? departmentData : departmentStats).map(dept => (
-                  <option key={dept.department || dept.name} value={dept.department || dept.name}>
-                    {dept.department || dept.name}
+                {(departmentData?.departments?.length > 0 ? departmentData.departments : departmentStats).map(dept => (
+                  <option key={dept.department_id || dept.name} value={dept.department_name || dept.name}>
+                    {dept.department_name || dept.name}
                   </option>
                 ))}
               </select>
