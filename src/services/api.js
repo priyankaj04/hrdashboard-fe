@@ -428,6 +428,187 @@ const apiService = {
         },
       }),
   },
+
+  // Analytics APIs
+  analytics: {
+    // Time period management
+    getTimePeriods: () => apiRequest('/api/analytics/time-periods'),
+    getCurrentPeriod: () => apiRequest('/api/analytics/current-period'),
+
+    // HR Analytics
+    getHiringResignationData: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+      if (filters.department) params.append('department', filters.department);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/hiring-resignation${queryString ? `?${queryString}` : ''}`);
+    },
+
+    getHiringTrend: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/hiring-trend${queryString ? `?${queryString}` : ''}`);
+    },
+
+    getResignationTrend: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/resignation-trend${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Salary Analytics
+    getSalarySpending: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/salary-spending${queryString ? `?${queryString}` : ''}`);
+    },
+
+    getPayrollSummary: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/payroll-summary${queryString ? `?${queryString}` : ''}`);
+    },
+
+    getSalaryDistribution: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.department) params.append('department', filters.department);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/salary-distribution${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Working Hours Analytics
+    getWorkingHoursByDepartment: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+      if (filters.department) params.append('department', filters.department);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/working-hours/department${queryString ? `?${queryString}` : ''}`);
+    },
+
+    getWorkingHoursByEmployee: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+      if (filters.employee_id) params.append('employee_id', filters.employee_id);
+      if (filters.department) params.append('department', filters.department);
+      if (filters.page) params.append('page', filters.page);
+      if (filters.limit) params.append('limit', filters.limit);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/working-hours/individual${queryString ? `?${queryString}` : ''}`);
+    },
+
+    getWorkingHoursSummary: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/working-hours/summary${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Employee Analytics
+    getEmployeeOverview: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.date) params.append('date', filters.date);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/employee-overview${queryString ? `?${queryString}` : ''}`);
+    },
+
+    getTodayAttendance: () => apiRequest('/api/analytics/attendance-today'),
+    getDepartmentStats: () => apiRequest('/api/analytics/department-stats'),
+
+    getEmployeeCount: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.status) params.append('status', filters.status);
+      if (filters.department) params.append('department', filters.department);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/employee-count${queryString ? `?${queryString}` : ''}`);
+    },
+
+    // Leave Analytics
+    getLeavesSummary: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+      if (filters.employee_id) params.append('employee_id', filters.employee_id);
+      if (filters.department) params.append('department', filters.department);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/analytics/leaves/summary${queryString ? `?${queryString}` : ''}`);
+    },
+  },
+
+  // Advanced Reports API
+  reports: {
+    getDetailedEmployeeReport: (filters = {}) => {
+      const params = new URLSearchParams();
+      
+      // Filtering options
+      if (filters.department && filters.department !== 'all') params.append('department', filters.department);
+      if (filters.employee_id) params.append('employee_id', filters.employee_id);
+      if (filters.period) params.append('period', filters.period);
+      if (filters.year) params.append('year', filters.year);
+      if (filters.month) params.append('month', filters.month);
+      
+      // Sorting options
+      if (filters.sort_by) params.append('sort_by', filters.sort_by);
+      if (filters.sort_order) params.append('sort_order', filters.sort_order);
+      
+      // Pagination
+      if (filters.page) params.append('page', filters.page);
+      if (filters.limit) params.append('limit', filters.limit);
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/reports/employee-detailed${queryString ? `?${queryString}` : ''}`);
+    },
+
+    exportReport: (reportType, filters = {}) => {
+      const params = new URLSearchParams();
+      params.append('type', reportType);
+      params.append('format', filters.format || 'pdf');
+      
+      Object.keys(filters).forEach(key => {
+        if (filters[key] && key !== 'format') {
+          params.append(key, filters[key]);
+        }
+      });
+      
+      const queryString = params.toString();
+      return apiRequest(`/api/reports/export?${queryString}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/octet-stream'
+        }
+      });
+    },
+  },
 };
 
 // Export utilities and service
