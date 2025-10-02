@@ -88,6 +88,18 @@ const LeavesAdvanced = () => {
     loadAllData();
   }, [user]);
 
+  // Set employee_id in leave form when user context is available
+  useEffect(() => {
+    console.log("user", user)
+    if (user && user.id && (!user.role || user.role === 'employee')) {
+      // For regular employees, automatically set their employee_id
+      setLeaveForm(prev => ({
+        ...prev,
+        employee_id: user.id
+      }));
+    }
+  }, [user]);
+
   // Reload data when filters or pagination changes
   useEffect(() => {
     if (!loading) {
@@ -235,19 +247,28 @@ const LeavesAdvanced = () => {
 
   const handleCreateLeave = async (e) => {
     e.preventDefault();
+    
+    // Ensure employee_id is set
+    if (!leaveForm.employee_id) {
+      alert('Employee selection is required. Please try refreshing the page if you\'re an employee.');
+      return;
+    }
+    
     try {
       const response = await apiService.leaves.create(leaveForm);
       if (response.success) {
         setShowRequestModal(false);
-        setLeaveForm({
-          employee_id: '',
+        // Reset form but preserve employee_id for regular employees
+        const resetForm = {
+          employee_id: (user && (!user.role || user.role === 'employee')) ? user.id : '',
           leave_type_id: '',
           start_date: '',
           end_date: '',
           reason: '',
           emergency_contact: '',
           contact_info: ''
-        });
+        };
+        setLeaveForm(resetForm);
         loadAllData();
         alert('Leave request created successfully!');
       }
@@ -1287,6 +1308,20 @@ const LeavesAdvanced = () => {
             </div>
             <div className="nr-card-body">
               <form onSubmit={handleCreateLeave} className="space-y-4">
+                {/* Show current user info for regular employees */}
+                {!canManageLeaves() && user && (
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4 text-blue-400" />
+                      <span className="text-sm text-blue-300">
+                        Requesting leave for: <span className="font-medium text-blue-200">
+                          {user.first_name} {user.last_name} ({user.department?.name || 'N/A'})
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
                 {canManageLeaves() && (
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
