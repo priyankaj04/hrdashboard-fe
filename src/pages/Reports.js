@@ -366,7 +366,7 @@ const Reports = () => {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Hiring vs Resignation Trend */}
-        <div className="nr-card">
+        {/* <div className="nr-card">
           <h3 className="text-lg font-semibold text-gray-100 mb-4">Hiring vs Resignation Trend</h3>
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart data={hiringData.hiring_trend || []}>
@@ -386,7 +386,7 @@ const Reports = () => {
               <Line type="monotone" dataKey="net_change" stroke="#3b82f6" strokeWidth={3} name="Net Change" />
             </ComposedChart>
           </ResponsiveContainer>
-        </div>
+        </div> */}
 
         {/* Salary Spending by Department */}
         <div className="nr-card">
