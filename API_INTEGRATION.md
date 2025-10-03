@@ -125,7 +125,7 @@ headers: {
 <ProtectedRoute>
   <Layout>
     <Routes>
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/attendance" element={<Attendance />} />
       <Route path="/employees" element={<Employees />} />
       // ... other routes
     </Routes>

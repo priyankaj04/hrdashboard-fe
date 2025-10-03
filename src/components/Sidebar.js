@@ -22,7 +22,7 @@ const Sidebar = ({
   const navigate = useNavigate();
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    /* { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' }, */
     { id: 'employees', label: 'Employees', icon: Users, path: '/employees' },
     { id: 'positions', label: 'Positions', icon: Briefcase, path: '/positions' },
     { id: 'attendance', label: 'Attendance', icon: Clock, path: '/attendance' },
