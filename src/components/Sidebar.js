@@ -34,7 +34,7 @@ const Sidebar = ({
   // Filter menu items based on user role
   const filteredMenuItems = menuItems.filter(item => {
     if (user?.role === 'employee') {
-      return ['dashboard', 'attendance', 'leaves'].includes(item.id);
+      return ['attendance', 'leaves'].includes(item.id);
     }
     // HR and admin can access positions
     return true;
