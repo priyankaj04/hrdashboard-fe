@@ -812,7 +812,7 @@ const Employees = () => {
   // Filter employees
   const filteredEmployees = employees.filter(emp => {
     const fullName = emp.name || `${emp.first_name} ${emp.last_name}` || '';
-    const email = emp.email || emp.personal_email || '';
+    const email = emp.user?.email || emp.personal_email || '';
     const position = emp.position?.title || emp.position_title || '';
 
     const matchesSearch = fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1099,7 +1099,7 @@ const Employees = () => {
               <div className="space-y-3 mb-4">
                 <div className="flex items-center text-sm text-gray-300 group-hover:text-gray-200">
                   <Mail className="h-4 w-4 mr-2 text-primary-400" />
-                  {employee.personal_email}
+                  {employee.user?.email}
                 </div>
                 <div className="flex items-center text-sm text-gray-300 group-hover:text-gray-200">
                   <Phone className="h-4 w-4 mr-2 text-primary-400" />
@@ -1274,7 +1274,7 @@ const Employees = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-300">Personal Email</label>
                         <p className="mt-1 text-sm text-gray-100">
-                          {selectedEmployee.personal_email || selectedEmployee.email || 'N/A'}
+                          {selectedEmployee.user?.email || selectedEmployee.email || 'N/A'}
                         </p>
                       </div>
                       <div>
